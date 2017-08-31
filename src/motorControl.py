@@ -9,6 +9,9 @@ import numpy as np
 import cPickle as pickle 
 import roboclaw
 import time
+import cPickle as pickle
+import os.path
+
 
 def connect(portName = "/dev/tty.usbserial-A9ETDN3N", baudRate = 115200):
     roboclaw.Open(portName, baudRate)
@@ -74,7 +77,195 @@ def getPosition(motors):
         
     return position
 
+
 class Motor(object):
+    '''
+        Abstact each motor into a mother-fucking class. 
+    '''
+
+    def __init__(self, address, motorNumber, rc, signFlipped = False, motorCounter = 0, kPID = [1.0, 1.0]):
+        self.address = address
+        self.motorNumber = motorNumber
+        self.rc = rc
+        self.kPID = kPID
+        self.signFlipped = signFlipped
+        self.motorCounter = motorCounter
+
+        ## Check for position pickle, if it doesn't exist create one. 
+        ## If it does exist, set encoder position to these values:
+        self.saveDir = 'logs/' + str(self.motorCounter) + '.p'
+        if os.path.isfile(self.saveDir):
+            f = open(self.saveDir, 'r')
+            savedPosition = pickle.load(f)
+            f.close()
+            #Set encoders to saved position!
+            if self.motorNumber == 1:
+                self.rc.SetEncM1(self.address, savedPosition)
+            elif self.motorNumber == 2:
+                self.rc.SetEncM2(self.address, savedPosition)
+        else:
+            f = open(self.saveDir, 'wb')
+            pickle.dump(self.getPosition(), f, protocol=pickle.HIGHEST_PROTOCOL)
+            f.close()
+
+        ## Initialize Tracking Information
+        self.tracking = {}
+        self.tracking['voltages'] = []
+        self.tracking['positions'] = []
+        self.tracking['timeElapsed'] = []
+        self.tracking['targetVelocities'] = []
+        self.tracking['velocities'] = []
+
+    def stop(self):
+        if self.motorNumber == 1:
+            self.rc.ForwardM1(self.address, 0)
+        elif self.motorNumber == 2:
+            self.rc.ForwardM2(self.address, 0)
+            
+    def move(self, voltage, direction):
+        '''
+            Move motor in specified direction with specified voltage.
+        '''
+        if self.signFlipped:
+            direction = -1*direction
+        
+        #use sign of velocity to figure out which way to go here:
+        if self.motorNumber == 1:
+            if direction > 0:
+                self.rc.ForwardM1(self.address, voltage)
+            else:
+                self.rc.BackwardM1(self.address, voltage)
+        elif self.motorNumber == 2:
+            if direction > 0:
+                self.rc.ForwardM2(self.address, voltage)
+            else:
+                self.rc.BackwardM2(self.address, voltage)
+
+    def getPosition(self):
+        '''
+        Read encoder position.
+        '''
+        if self.motorNumber == 1:
+            position = self.rc.ReadEncM1(self.address)[1] 
+        elif self.motorNumber == 2:
+            position = self.rc.ReadEncM2(self.address)[1] 
+
+        return position
+    
+    def clearTracking(self):
+        self.tracking = {}
+        self.tracking['voltages'] = []
+        self.tracking['positions'] = []
+        self.tracking['timeElapsed'] = []
+        self.tracking['targetVelocities'] = []
+        self.tracking['velocities'] = []
+        self.tracking['targetPosition'] = []
+        
+    def restartTimer(self):
+        self.startTime = time.time()
+    
+    def visualizeMove(self):
+        fig = figure(0, (10,8))
+        subplot(3,1,1)
+        plot(self.tracking['timeElapsed'], self.tracking['positions'], 'b')
+        plot(self.tracking['timeElapsed'], self.tracking['targetPosition'], 'r')
+        legend(['Actual Position', 'Target Position'])
+        grid(1)
+        title('Positions')
+
+        subplot(3,1,2)
+        plot(self.tracking['timeElapsed'], self.tracking['velocities'], 'm-x')
+        plot(self.tracking['timeElapsed'], self.tracking['targetVelocities'], 'c-x')
+        grid(1)
+        legend(['Velocity Est', 'Velocity Target'])
+        ylim([-3500, 3500])
+
+        subplot(3,1,3)
+        plot(self.tracking['timeElapsed'], self.tracking['voltages'], 'g-x')
+        grid(1)
+        title('Voltages')
+
+    def initialize(self):
+        self.oldPosition = self.getPosition()
+        self.oldTime = time.time()
+        self.oldVoltage = 0.0
+        self.oldError = 0.0
+
+    def resetEncoders(self):
+        self.rc.ResetEncoders(self.address)
+
+    def savePosition(self):
+        position = self.getPosition()
+        f = open(self.saveDir, 'wb')
+        pickle.dump(position, f, protocol=pickle.HIGHEST_PROTOCOL)
+        f.close()
+
+    def controlledMove(self, targetPosition, timeToReach, verbose = False):
+        '''
+        Move to target position in requested amount of time using simple controls. Use Proportional, 
+        and maybe proportional/derivative controls to minimize voltage error. 
+        '''
+
+        #How far has the motor moved?
+        newPosition = self.getPosition()
+
+        #What time it is?
+        newTime = time.time()
+
+        #Compute this sucker's velocity:
+        self.velocity = float(newPosition-self.oldPosition)/(newTime-self.oldTime)
+
+        #Target Velocity has likely changed!
+        self.remainingTime = timeToReach
+  
+        #Below a minium movement threshold, don't try to move. This restuls in controller instability. 
+        distToMove = float(targetPosition - newPosition)
+        self.targetVelocity = distToMove/self.remainingTime
+            
+        #Compute velocity error
+        error = self.velocity-self.targetVelocity
+
+        #Update Voltage
+        newVoltage = self.oldVoltage + self.kPID[0]*error
+            
+        #Check to make sure new voltage is between 0 and 128:
+        if newVoltage > 128:
+            newVoltage = 128
+            print 'excess voltage on motor ' + str(self.motorCounter)
+        elif newVoltage < 0:
+            newVoltage = 0
+            print 'voltage too low on motor ' + str(self.motorCounter)
+
+        #And actually turn motors!
+        self.move(int(round(newVoltage)), sign(self.targetVelocity))
+
+        #Update xtv
+        self.oldVoltage = newVoltage
+        self.oldPosition = newPosition
+        self.oldTime  = newTime
+        self.oldError = newError
+        
+        #Update tracking information
+        self.tracking['voltages'].append(newVoltage)
+        self.tracking['positions'].append(newPosition)
+        self.tracking['timeElapsed'].append(time.time()-startTime)
+        self.tracking['targetVelocities'].append(self.targetVelocity)
+        self.tracking['velocities'].append(self.velocity)
+        self.tracking['targetPosition'].append(targetPosition)
+
+        if verbose:
+            print 'Voltage = {}'.format(newVoltage)
+        
+
+
+
+
+
+
+
+#######################
+
+class MotorDeprecated(object):
     '''
         Abstact each motor into a mother-fucking class. 
     '''
