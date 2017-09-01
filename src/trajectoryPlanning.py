@@ -33,7 +33,7 @@ class SimpleQuadraticTrajectory(object):
         self.d = (self.p1+self.p2-self.c*self.tt)/2
         
     def compute(self, t):
-        if t < self.tu:T
+        if t < self.tu:
             return self.a*t**2+self.b
 
         elif t>=self.tu and t<=self.td:
