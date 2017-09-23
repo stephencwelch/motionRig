@@ -6,6 +6,8 @@ A set of python tools for controlling a Welch Labs motion rig. If you have a Wel
 This repository contains a set of methods designed to control a 5-axis motion rig. I'm seeking here to create something that I can quickly use to get the shots I want. 
 
 ## To Do
+- Positional Memory on emergency stop.
+- Smooth Motion Through multiple waypoints
 - Figure out how to program a "keep looking at the same spot" mode - where I can move the u/d l/r f/b axes, and the pan tilt controllers do thier best to remain focused on a single point.
 
 # Complete (ish)
