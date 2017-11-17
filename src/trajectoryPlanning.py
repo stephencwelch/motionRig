@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 class SimpleQuadraticTrajectory(object):
     '''
     Simple quadratic trajectory planner. (should) achieve smooth starts and stops 
-    by using quadratic function at the ends, and matchign first dericatives. 
+    by using quadratic function at the ends, and matching first derivatives. 
     '''
     
     def __init__(self, tu, tt, p1, p2):
