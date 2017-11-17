@@ -82,7 +82,6 @@ def savePositions(motors):
     for motor in motors:
         motor.savePosition()
 
-
 class Motor(object):
     '''
         Abstact each motor into a mother-fucking class. 
