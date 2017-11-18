@@ -1,6 +1,8 @@
-import roboclaw
+from roboclaw import Roboclaw
 
 #Windows comport name
-roboclaw.Open("COM3",115200)
+rc = Roboclaw("COM3",115200)
 #Linux comport name
-#roboclaw.Open("/dev/ttyACM0",115200)
+#rc = Roboclaw("/dev/ttyACM0",115200)
+
+rc.Open()

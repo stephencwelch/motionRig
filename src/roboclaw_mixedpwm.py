@@ -1,29 +1,30 @@
 import time
-import roboclaw
+from roboclaw import Roboclaw
 
 #Windows comport name
-roboclaw.Open("COM3",115200)
+rc = Roboclaw("COM9",115200)
 #Linux comport name
-#roboclaw.Open("/dev/ttyACM0",115200)
+#rc = Roboclaw("/dev/ttyACM0",115200)
 
+rc.Open()
 address = 0x80
 
-roboclaw.ForwardMixed(address, 0)
-roboclaw.TurnRightMixed(address, 0)
+rc.ForwardMixed(address, 0)
+rc.TurnRightMixed(address, 0)
 
 while(1):
-	roboclaw.ForwardMixed(address, 64)
+	rc.ForwardMixed(address, 32)
 	time.sleep(2)
-	roboclaw.BackwardMixed(address, 64)
+	rc.BackwardMixed(address, 32)
 	time.sleep(2)
-	roboclaw.TurnRightMixed(address, 64)
+	rc.TurnRightMixed(address, 32)
 	time.sleep(2)
-	roboclaw.TurnLeftMixed(address, 64)
+	rc.TurnLeftMixed(address, 32)
 	time.sleep(2)
-	roboclaw.ForwardMixed(address, 0)
-	roboclaw.TurnRightMixed(address, 64)
+	rc.ForwardMixed(address, 0)
+	rc.TurnRightMixed(address, 32)
 	time.sleep(2)
-	roboclaw.TurnLeftMixed(address, 64)
+	rc.TurnLeftMixed(address, 32)
 	time.sleep(2)
-	roboclaw.TurnRightMixed(address, 0)
+	rc.TurnRightMixed(address, 0)
 	time.sleep(2)

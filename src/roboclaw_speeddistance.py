@@ -3,13 +3,18 @@
 #***The Min and Max Positions must be at least 0 and 50000
 
 import time
-import roboclaw
+from roboclaw import Roboclaw
+
+#Windows comport name
+rc = Roboclaw("COM3",115200)
+#Linux comport name
+#rc = Roboclaw("/dev/ttyACM0",115200)
 
 def displayspeed():
-	enc1 = roboclaw.ReadEncM1(address)
-	enc2 = roboclaw.ReadEncM2(address)
-	speed1 = roboclaw.ReadSpeedM1(address)
-	speed2 = roboclaw.ReadSpeedM2(address)
+	enc1 = rc.ReadEncM1(address)
+	enc2 = rc.ReadEncM2(address)
+	speed1 = rc.ReadSpeedM1(address)
+	speed2 = rc.ReadSpeedM2(address)
 
 	print("Encoder1:"),
 	if(enc1[0]==1):
@@ -34,47 +39,43 @@ def displayspeed():
 	else:
 		print "failed "
 
-#Windows comport name
-roboclaw.Open("COM3",38400)
-#Linux comport name
-#roboclaw.Open("/dev/ttyACM0",115200)
-
+rc.Open()
 address = 0x80
 
-version = roboclaw.ReadVersion(address)
+version = rc.ReadVersion(address)
 if version[0]==False:
 	print "GETVERSION Failed"
 else:
 	print repr(version[1])
 
 while(1):
-	roboclaw.SpeedDistanceM1(address,12000,48000,1)
-	roboclaw.SpeedDistanceM2(address,-12000,48000,1)
+	rc.SpeedDistanceM1(address,12000,48000,1)
+	rc.SpeedDistanceM2(address,-12000,48000,1)
 	buffers = (0,0,0)
 	while(buffers[1]!=0x80 and buffers[2]!=0x80):	#Loop until distance command has completed
 		displayspeed();
-		buffers = roboclaw.ReadBuffers(address);
+		buffers = rc.ReadBuffers(address);
   
 	time.sleep(2)
 
-	roboclaw.SpeedDistanceM1(address,-12000,48000,1)
-	roboclaw.SpeedDistanceM2(address,12000,48000,1)
+	rc.SpeedDistanceM1(address,-12000,48000,1)
+	rc.SpeedDistanceM2(address,12000,48000,1)
 	buffers = (0,0,0)
 	while(buffers[1]!=0x80 and buffers[2]!=0x80):	#Loop until distance command has completed
 		displayspeed()
-		buffers = roboclaw.ReadBuffers(address)
+		buffers = rc.ReadBuffers(address)
   
 	time.sleep(2);  #When no second command is given the motors will automatically slow down to 0 which takes 1 second
 
-	roboclaw.SpeedDistanceM1(address,12000,48000,1)
-	roboclaw.SpeedDistanceM2(address,-12000,48000,1)
-	roboclaw.SpeedDistanceM1(address,-12000,48000,0)
-	roboclaw.SpeedDistanceM2(address,12000,48000,0)
-	roboclaw.SpeedDistanceM1(address,0,48000,0)
-	roboclaw.SpeedDistanceM2(address,0,48000,0)
+	rc.SpeedDistanceM1(address,12000,48000,1)
+	rc.SpeedDistanceM2(address,-12000,48000,1)
+	rc.SpeedDistanceM1(address,-12000,48000,0)
+	rc.SpeedDistanceM2(address,12000,48000,0)
+	rc.SpeedDistanceM1(address,0,48000,0)
+	rc.SpeedDistanceM2(address,0,48000,0)
 	buffers = (0,0,0)
 	while(buffers[1]!=0x80 and buffers[2]!=0x80):	#Loop until distance command has completed
 		displayspeed()
-		buffers = roboclaw.ReadBuffers(address)
+		buffers = rc.ReadBuffers(address)
   
 	time.sleep(1)

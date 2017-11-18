@@ -3,13 +3,18 @@
 #***The Min and Max Positions must be at least 0 and 50000
 
 import time
-import roboclaw
+from roboclaw import Roboclaw
+
+#Windows comport name
+rc = Roboclaw("COM3",115200)
+#Linux comport name
+#rc = Roboclaw("/dev/ttyACM0",115200)
 
 def displayspeed():
-	enc1 = roboclaw.ReadEncM1(address)
-	enc2 = roboclaw.ReadEncM2(address)
-	speed1 = roboclaw.ReadSpeedM1(address)
-	speed2 = roboclaw.ReadSpeedM2(address)
+	enc1 = rc.ReadEncM1(address)
+	enc2 = rc.ReadEncM2(address)
+	speed1 = rc.ReadSpeedM1(address)
+	speed2 = rc.ReadSpeedM2(address)
 
 	print("Encoder1:"),
 	if(enc1[0]==1):
@@ -34,16 +39,12 @@ def displayspeed():
 	else:
 		print "failed "
 
-#Windows comport name
-roboclaw.Open("COM3",38400)
-#Linux comport name
-#roboclaw.Open("/dev/ttyACM0",115200)
-
+rc.Open()
 address = 0x80
 
 while(1):
 	print "Pos 50000"
-	roboclaw.SpeedAccelDeccelPositionM1(address,32000,12000,32000,50000,0)
+	rc.SpeedAccelDeccelPositionM1(address,32000,12000,32000,50000,0)
 	for i in range(0,80):
 		displayspeed()
 		time.sleep(0.1)
@@ -51,7 +52,7 @@ while(1):
 	time.sleep(2)
 	
 	print "Pos 0"
-	roboclaw.SpeedAccelDeccelPositionM1(address,32000,12000,32000,0,0)
+	rc.SpeedAccelDeccelPositionM1(address,32000,12000,32000,0,0)
 	for i in range(0,80):
 		displayspeed()
 		time.sleep(0.1)

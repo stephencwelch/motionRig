@@ -7,7 +7,7 @@
 
 import numpy as np
 import cPickle as pickle 
-import roboclaw
+from roboclaw import Roboclaw
 import time
 import cPickle as pickle
 import os.path
@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 
 def connect(portName = "/dev/tty.usbserial-A9ETDN3N", baudRate = 115200):
-    roboclaw.Open(portName, baudRate)
+    roboclaw = Roboclaw(portName, baudRate)
     return roboclaw
 
 #STOP ALL THE MOTORS (IMPORTANT SHIT)
@@ -29,47 +29,51 @@ def stopAll(rc):
     address = 0x82
     rc.ForwardM1(address,0)
     rc.ForwardM2(address,0)
-    
-def manualControl(leftUD=0, rightUD= 0, leftRight=0, fB=0, tilt=0, pan=0):
-    '''
-    Manually Control Motion Rig.
-    '''
 
-    #Up Down Left:
-    if leftUD >= 0:
-        roboclaw.ForwardM2(0x81, leftUD)
-    elif leftUD < 0:
-        roboclaw.BackwardM2(0x81, -1*leftUD)
+class ManualControl(object):
+    def __init__(self, rc):
+        self.rc = rc
 
-    #Up Down Right:
-    if rightUD >= 0:
-        roboclaw.ForwardM1(0x81, rightUD)
-    elif rightUD < 0:
-        roboclaw.BackwardM1(0x81, -1*rightUD)
-    
-    #Left Right
-    if leftRight >= 0:
-        roboclaw.ForwardM1(0x80, leftRight)
-    elif leftRight < 0:
-        roboclaw.BackwardM1(0x80, -1*leftRight)
+    def manualControl(self, leftUD=0, rightUD= 0, leftRight=0, fB=0, tilt=0, pan=0):
+        '''
+        Manually Control Motion Rig.
+        '''
+
+        #Up Down Left:
+        if leftUD >= 0:
+            self.rc.ForwardM2(0x81, leftUD)
+        elif leftUD < 0:
+            self.rc.BackwardM2(0x81, -1*leftUD)
+
+        #Up Down Right:
+        if rightUD >= 0:
+            self.rc.ForwardM1(0x81, rightUD)
+        elif rightUD < 0:
+            self.rc.BackwardM1(0x81, -1*rightUD)
         
-    #forwardBackward
-    if fB >= 0:
-        roboclaw.ForwardM2(0x80, fB)
-    elif fB < 0:
-        roboclaw.BackwardM2(0x80, -1*fB)
+        #Left Right
+        if leftRight >= 0:
+            self.rc.ForwardM1(0x80, leftRight)
+        elif leftRight < 0:
+            self.rc.BackwardM1(0x80, -1*leftRight)
             
-    #tilt
-    if tilt >= 0:
-        roboclaw.ForwardM1(0x82, tilt)
-    elif tilt < 0:
-        roboclaw.BackwardM1(0x82, -1*tilt)
-        
-    #pan
-    if pan >= 0:
-        roboclaw.ForwardM2(0x82, pan)
-    elif pan < 0:
-        roboclaw.BackwardM2(0x82, -1*pan)
+        #forwardBackward
+        if fB >= 0:
+            self.rc.ForwardM2(0x80, fB)
+        elif fB < 0:
+            self.rc.BackwardM2(0x80, -1*fB)
+                
+        #tilt
+        if tilt >= 0:
+            self.rc.ForwardM1(0x82, tilt)
+        elif tilt < 0:
+            self.rc.BackwardM1(0x82, -1*tilt)
+            
+        #pan
+        if pan >= 0:
+            self.rc.ForwardM2(0x82, pan)
+        elif pan < 0:
+            self.rc.BackwardM2(0x82, -1*pan)
 
 def getPositions(motors):
     position = []

@@ -1,14 +1,16 @@
 import time
-import roboclaw
+from roboclaw import Roboclaw
 
 #Windows comport name
-roboclaw.Open("COM3",115200)
+rc = Roboclaw("COM9",115200)
 #Linux comport name
-#roboclaw.Open("/dev/ttyACM0",115200)
+#rc = Roboclaw("/dev/ttyACM0",115200)
+
+rc.Open()
 
 while 1:
 	#Get version string
-	version = roboclaw.ReadVersion(0x80)
+	version = rc.ReadVersion(0x80)
 	if version[0]==False:
 		print "GETVERSION Failed"
 	else:
