@@ -22,42 +22,42 @@ def levelRig(motors, home, rc, moveTime = 5.0):
         leveledPositions[0] = leveledPositions[0] + int(round(delta/2))
         leveledPositions[1] = leveledPositions[1] + int(round(delta/2))
 
-    totalTime = moveTime
-    rampTime = moveTime/5.0
+        totalTime = moveTime
+        rampTime = moveTime/5.0
 
-    startingPositions = getPositions(motors)
-    lookAheadTime = 1.0
-    tolerance = 50.0 #Anything less than this many ticks we're calling "Not a move"
+        startingPositions = getPositions(motors)
+        lookAheadTime = 1.0
+        tolerance = 50.0 #Anything less than this many ticks we're calling "Not a move"
 
-    motorsToMove = []
-    targetPositionsToMove = []
-    for i, motor in enumerate(motors):
-        if abs(motor.getPosition()-leveledPositions[i]) > tolerance:
-            motorsToMove.append(motor)
-            targetPositionsToMove.append(leveledPositions[i])
+        motorsToMove = []
+        targetPositionsToMove = []
+        for i, motor in enumerate(motors):
+            if abs(motor.getPosition()-leveledPositions[i]) > tolerance:
+                motorsToMove.append(motor)
+                targetPositionsToMove.append(leveledPositions[i])
 
-    trajectories = []
-    for i, motor in enumerate(motorsToMove):
-        trajectories.append(SimpleQuadraticTrajectory(tu = rampTime, tt = totalTime, \
-                                                p1 = motor.getPosition(), p2 = targetPositionsToMove[i]))
-
-    for motor in motorsToMove:
-        motor.initialize(targetVelocityMin = -2500.0, targetVelocityMax = 2500.0)
-        motor.clearTracking()
-
-    startTime = time.time()
-    timeElapsed = 0.0
-
-    while timeElapsed < totalTime:
-        timeElapsed = time.time()-startTime
-
+        trajectories = []
         for i, motor in enumerate(motorsToMove):
-            lookAheadValue = trajectories[i].compute(timeElapsed + lookAheadTime)
-            motor.controlledMove(targetPosition = lookAheadValue, timeToReach = lookAheadTime)
+            trajectories.append(SimpleQuadraticTrajectory(tu = rampTime, tt = totalTime, \
+                                                    p1 = motor.getPosition(), p2 = targetPositionsToMove[i]))
 
-    stopAll(rc)
-    savePositions(motors)
+        for motor in motorsToMove:
+            motor.initialize(targetVelocityMin = -2500.0, targetVelocityMax = 2500.0)
+            motor.clearTracking()
 
-    currentDifference = getPositions(motors)[0]-getPositions(motors)[1]
-    delta = abs(getPositions(motors)[0]-home[0]) - abs(getPositions(motors)[1]-home[1])
-    print 'Rig Leveled! Difference from home = ' + str(delta)
+        startTime = time.time()
+        timeElapsed = 0.0
+
+        while timeElapsed < totalTime:
+            timeElapsed = time.time()-startTime
+
+            for i, motor in enumerate(motorsToMove):
+                lookAheadValue = trajectories[i].compute(timeElapsed + lookAheadTime)
+                motor.controlledMove(targetPosition = lookAheadValue, timeToReach = lookAheadTime)
+
+        stopAll(rc)
+        savePositions(motors)
+
+        currentDifference = getPositions(motors)[0]-getPositions(motors)[1]
+        delta = abs(getPositions(motors)[0]-home[0]) - abs(getPositions(motors)[1]-home[1])
+        print 'Rig Leveled! Difference from home = ' + str(delta)
