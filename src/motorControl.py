@@ -231,6 +231,11 @@ class Motor(object):
         #What time it is?
         newTime = time.time()
 
+        #Check for false zeros. 
+        if newPosition == 0 and abs((self.oldPosition - newPosition)) > 1000:
+            print('False Zero Detected! Estimating Position...')
+            newPosition = self.oldPosition + self.velocity*(newTime-self.oldTime) #Test to see if sign is right...
+
         #Compute this sucker's velocity:
         self.velocity = float(newPosition-self.oldPosition)/(newTime-self.oldTime)
 
