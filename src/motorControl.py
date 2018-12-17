@@ -30,9 +30,19 @@ def stopAll(rc):
     rc.ForwardM1(address,0)
     rc.ForwardM2(address,0)
 
+def stopAllMotors(motors):
+    for motor in motors:
+        motor.stop()
+
 class ManualControl(object):
-    def __init__(self, rc):
+    def __init__(self, rc, leftUDOn=True, rightUDOn= True, leftRightOn=True, fBOn=True, tiltOn=True, panOn=True):
         self.rc = rc
+        self.leftUDOn = leftUDOn
+        self.rightUDOn = rightUDOn
+        self.leftRightOn = leftRightOn
+        self.fBOn = fBOn
+        self.tiltOn = tiltOn
+        self.panOn = panOn
 
     def manualControl(self, leftUD=0, rightUD= 0, leftRight=0, fB=0, tilt=0, pan=0):
         '''
@@ -40,40 +50,46 @@ class ManualControl(object):
         '''
 
         #Up Down Left:
-        if leftUD >= 0:
-            self.rc.ForwardM2(0x81, leftUD)
-        elif leftUD < 0:
-            self.rc.BackwardM2(0x81, -1*leftUD)
+        if self.leftUDOn:
+            if leftUD >= 0:
+                self.rc.ForwardM2(0x81, leftUD)
+            elif leftUD < 0:
+                self.rc.BackwardM2(0x81, -1*leftUD)
 
         #Up Down Right:
-        if rightUD >= 0:
-            self.rc.ForwardM1(0x81, rightUD)
-        elif rightUD < 0:
-            self.rc.BackwardM1(0x81, -1*rightUD)
+        if self.rightUDOn:
+            if rightUD >= 0:
+                self.rc.ForwardM1(0x81, rightUD)
+            elif rightUD < 0:
+                self.rc.BackwardM1(0x81, -1*rightUD)
         
         #Left Right
-        if leftRight >= 0:
-            self.rc.ForwardM1(0x80, leftRight)
-        elif leftRight < 0:
-            self.rc.BackwardM1(0x80, -1*leftRight)
-            
+        if self.leftRightOn:
+            if leftRight >= 0:
+                self.rc.ForwardM1(0x80, leftRight)
+            elif leftRight < 0:
+                self.rc.BackwardM1(0x80, -1*leftRight)
+                
         #forwardBackward
-        if fB >= 0:
-            self.rc.ForwardM2(0x80, fB)
-        elif fB < 0:
-            self.rc.BackwardM2(0x80, -1*fB)
+        if self.fBOn:
+            if fB >= 0:
+                self.rc.ForwardM2(0x80, fB)
+            elif fB < 0:
+                self.rc.BackwardM2(0x80, -1*fB)
                 
         #tilt
-        if tilt >= 0:
-            self.rc.ForwardM1(0x82, tilt)
-        elif tilt < 0:
-            self.rc.BackwardM1(0x82, -1*tilt)
+        if self.tiltOn:
+            if tilt >= 0:
+                self.rc.ForwardM1(0x84, tilt)
+            elif tilt < 0:
+                self.rc.BackwardM1(0x84, -1*tilt)
             
         #pan
-        if pan >= 0:
-            self.rc.ForwardM2(0x82, pan)
-        elif pan < 0:
-            self.rc.BackwardM2(0x82, -1*pan)
+        if self.panOn:
+            if pan >= 0:
+                self.rc.ForwardM2(0x84, pan)
+            elif pan < 0:
+                self.rc.BackwardM2(0x84, -1*pan)
 
 def getPositions(motors):
     position = []
@@ -91,9 +107,10 @@ class Motor(object):
         Abstact each motor into a mother-fucking class. 
     '''
 
-    def __init__(self, address, motorNumber, rc, signFlipped = False, motorCounter = 0, kPID = [1.0, 1.0]):
+    def __init__(self, address, motorNumber, rc, signFlipped = False, motorCounter = 0, kPID = [1.0, 1.0], name = 'motor'):
         self.address = address
         self.motorNumber = motorNumber
+        self.name = name
         self.rc = rc
         self.kPID = kPID
         self.signFlipped = signFlipped
